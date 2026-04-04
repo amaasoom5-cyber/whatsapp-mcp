@@ -16,7 +16,7 @@ def get_config() -> dict:
         "waba_id": os.getenv("META_WABA_ID", ""),
         "phone_number_id": os.getenv("META_PHONE_NUMBER_ID", ""),
         "app_id": os.getenv("META_APP_ID", ""),
-        "api_version": os.getenv("META_API_VERSION", "v21.0"),
+        "api_version": os.getenv("META_API_VERSION", "v24.0"),
     }
     return config
 

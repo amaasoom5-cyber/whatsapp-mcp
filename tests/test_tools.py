@@ -16,19 +16,19 @@ from whatsapp_mcp.server import (
 
 class TestHelpers:
     def test_normalize_phone_with_plus(self):
-        assert _normalize_phone("+919876543210") == "+919876543210"
+        assert _normalize_phone("+919876543210") == "919876543210"
 
     def test_normalize_phone_without_plus(self):
-        assert _normalize_phone("919876543210") == "+919876543210"
+        assert _normalize_phone("919876543210") == "919876543210"
 
     def test_normalize_phone_with_spaces(self):
-        assert _normalize_phone("+91 98765 43210") == "+919876543210"
+        assert _normalize_phone("+91 98765 43210") == "919876543210"
 
     def test_normalize_phone_with_dashes(self):
-        assert _normalize_phone("+91-9876-543210") == "+919876543210"
+        assert _normalize_phone("+91-9876-543210") == "919876543210"
 
     def test_normalize_phone_with_parens(self):
-        assert _normalize_phone("+1 (234) 567-8901") == "+12345678901"
+        assert _normalize_phone("+1 (234) 567-8901") == "12345678901"
 
     def test_normalize_components_lowercase(self):
         result = _normalize_components([
@@ -52,6 +52,21 @@ class TestHelpers:
         assert payload["category"] == "MARKETING"
         assert payload["language"] == "en"
         assert payload["components"][0]["type"] == "body"
+        assert "parameter_format" not in payload
+
+    def test_build_template_payload_named_params(self):
+        payload = _build_template_payload(
+            "greet", "marketing", "en",
+            [{"type": "BODY", "text": "Hello {{customer_name}}, your order {{order_id}} is ready."}],
+        )
+        assert payload["parameter_format"] == "NAMED"
+
+    def test_build_template_payload_positional_params(self):
+        payload = _build_template_payload(
+            "greet", "marketing", "en",
+            [{"type": "BODY", "text": "Hello {{1}}, your order {{2}} is ready."}],
+        )
+        assert "parameter_format" not in payload
 
 
 class TestToolRegistration:

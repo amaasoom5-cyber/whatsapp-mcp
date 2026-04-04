@@ -4,7 +4,7 @@ Manage WhatsApp Business templates and send messages from **Claude, Cursor, VS C
 
 <p align="center">
   <img src="https://img.shields.io/badge/MCP-compatible-blue" alt="MCP Compatible" />
-  <img src="https://img.shields.io/badge/Meta_Cloud_API-v21.0-green" alt="Meta API v21.0" />
+  <img src="https://img.shields.io/badge/Meta_Cloud_API-v24.0-green" alt="Meta API v24.0" />
   <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License" />
   <img src="https://img.shields.io/badge/python-3.10+-yellow" alt="Python 3.10+" />
 </p>
@@ -49,7 +49,7 @@ META_ACCESS_TOKEN=your_access_token
 META_WABA_ID=your_whatsapp_business_account_id
 META_PHONE_NUMBER_ID=your_phone_number_id
 META_APP_ID=your_app_id              # Required for media uploads
-META_API_VERSION=v21.0               # Optional, defaults to v21.0
+META_API_VERSION=v24.0               # Optional, defaults to v24.0
 ```
 
 > **How to get these?** Go to [Meta for Developers](https://developers.facebook.com/), create or select your app, navigate to WhatsApp > API Setup.
@@ -124,20 +124,31 @@ Once connected, just talk to your AI assistant:
 
 ## Supported Template Types
 
-| Type | Create | Send |
-|------|--------|------|
-| Marketing | ✅ | ✅ |
-| Utility | ✅ | ✅ |
-| Carousel | ✅ | ✅ |
-| Catalog | ✅ | ✅ |
-| Limited-Time Offer (LTO) | ✅ | ✅ |
-| Coupon Code | ✅ | ✅ |
-| Order Details | ✅ | ✅ |
-| Order Status | ✅ | ✅ |
-| Multi-Product Message (MPM) | ✅ | ✅ |
-| Single-Product Message (SPM) | ✅ | ✅ |
-| Product Card Carousel | ✅ | ✅ |
-| Call Permission | ✅ | — |
+Meta's API has **2 template categories** (we exclude Authentication). Within each category, templates can have different **structural variants** — each with its own component layout and validation rules.
+
+### Marketing Templates
+
+| Structural Variant | Create | Send | Key Components |
+|---|---|---|---|
+| Text / Image / Video / Document | ✅ | ✅ | Header (optional) + Body + Footer + Buttons |
+| Carousel | ✅ | ✅ | Cards with per-card header, body, buttons |
+| Catalog | ✅ | ✅ | Body + `CATALOG` button |
+| Limited-Time Offer (LTO) | ✅ | ✅ | Body + `limited_time_offer` component + copy code button |
+| Coupon Code | ✅ | ✅ | Body + `copy_code` button |
+| Multi-Product Message (MPM) | ✅ | ✅ | Body + `product_list` action with sections |
+| Single-Product Message (SPM) | ✅ | ✅ | Body + `product` action |
+| Product Card Carousel | ✅ | ✅ | Body + product cards with buttons |
+| Call Permission | ✅ | — | Body + `call_permission` button |
+
+### Utility Templates
+
+| Structural Variant | Create | Send | Key Components |
+|---|---|---|---|
+| Text / Image / Video / Document | ✅ | ✅ | Header (optional) + Body + Footer + Buttons |
+| Order Details | ✅ | ✅ | Body + `order_details` button with payment payload |
+| Order Status | ✅ | ✅ | Body + order status parameters |
+
+> **How routing works:** When you call `create_template`, the server inspects the components to auto-detect the structural variant (e.g., presence of `cards[]` → Carousel, `CATALOG` button → Catalog) and applies the correct validator. You just pass `category: "MARKETING"` or `"UTILITY"` — the variant is determined from the component structure.
 
 ## Running Tests
 

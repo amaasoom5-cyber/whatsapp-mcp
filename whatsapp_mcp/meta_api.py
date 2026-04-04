@@ -44,7 +44,7 @@ class MetaAPI:
         waba_id: str,
         phone_number_id: str,
         app_id: str = "",
-        api_version: str = "v21.0",
+        api_version: str = "v24.0",
     ):
         self.access_token = access_token
         self.waba_id = waba_id

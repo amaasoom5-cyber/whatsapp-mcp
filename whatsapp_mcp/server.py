@@ -77,20 +77,25 @@ def _build_template_payload(
     components: list[dict],
 ) -> dict:
     """Build the Meta API payload for template creation."""
+    normalized = _normalize_components(components)
     payload: dict[str, Any] = {
         "name": name,
         "category": category.upper(),
         "language": language,
-        "components": _normalize_components(components),
+        "components": normalized,
     }
+    # Detect named placeholders like {{customer_name}} in body text
+    for comp in normalized:
+        if comp.get("type") == "body" and comp.get("text"):
+            if re.search(r"\{\{[a-zA-Z_]\w*\}\}", comp["text"]):
+                payload["parameter_format"] = "NAMED"
+                break
     return payload
 
 
 def _normalize_phone(phone: str) -> str:
-    """Normalize a phone number: strip spaces/dashes, ensure leading +."""
-    cleaned = re.sub(r"[\s\-\(\)]", "", phone)
-    if not cleaned.startswith("+"):
-        cleaned = "+" + cleaned
+    """Normalize a phone number: strip spaces/dashes/+, digits only."""
+    cleaned = re.sub(r"[\s\-\(\)+]", "", phone)
     return cleaned
 
 

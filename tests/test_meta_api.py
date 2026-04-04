@@ -17,7 +17,7 @@ def api():
         waba_id="123456",
         phone_number_id="789012",
         app_id="app123",
-        api_version="v21.0",
+        api_version="v24.0",
     )
 
 
@@ -26,7 +26,7 @@ class TestMetaAPIInit:
         assert api.access_token == "test_token"
         assert api.waba_id == "123456"
         assert api.phone_number_id == "789012"
-        assert api._base == "https://graph.facebook.com/v21.0/"
+        assert api._base == "https://graph.facebook.com/v24.0/"
 
     def test_headers(self, api):
         assert api._headers["Authorization"] == "Bearer test_token"
