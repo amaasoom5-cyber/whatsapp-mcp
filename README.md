@@ -1,6 +1,6 @@
 # WhatsApp MCP Server
 
-Manage WhatsApp Business templates and send messages from **Claude, Cursor, VS Code Copilot**, or any MCP-compatible client — powered by the Meta Cloud API.
+Manage WhatsApp Business templates and send messages from **Claude, ChatGPT, Cursor, VS Code Copilot**, or any MCP-compatible client — powered by the Meta Cloud API.
 
 <p align="center">
   <img src="https://img.shields.io/badge/MCP-compatible-blue" alt="MCP Compatible" />
@@ -56,7 +56,22 @@ META_API_VERSION=v24.0               # Optional, defaults to v24.0
 
 ### 3. Connect to Your MCP Client
 
-#### Claude Desktop
+The server supports **3 transport modes**:
+
+| Transport | Command | Used By |
+|---|---|---|
+| `stdio` (default) | `python -m whatsapp_mcp` | Claude Desktop, Cursor, VS Code, Windsurf |
+| `sse` | `python -m whatsapp_mcp --transport sse` | ChatGPT, Claude.ai, remote clients |
+| `streamable-http` | `python -m whatsapp_mcp --transport streamable-http` | Newer MCP clients |
+
+For HTTP transports, you can customize host/port:
+```bash
+python -m whatsapp_mcp --transport sse --host 0.0.0.0 --port 3000
+```
+
+---
+
+#### Claude Desktop (stdio — local)
 
 Add to `claude_desktop_config.json`:
 
@@ -77,7 +92,21 @@ Add to `claude_desktop_config.json`:
 }
 ```
 
-#### Cursor
+#### Claude Desktop / Claude.ai (remote)
+
+1. Start the server: `python -m whatsapp_mcp --transport sse --host 0.0.0.0 --port 8000`
+2. Expose via [ngrok](https://ngrok.com), Cloudflare Tunnel, or deploy to a VPS
+3. In Claude Desktop: Settings → Connectors → Add Custom MCP → enter your server URL (e.g. `https://your-server.example.com/sse`)
+
+#### ChatGPT (remote)
+
+1. Start the server: `python -m whatsapp_mcp --transport sse --host 0.0.0.0 --port 8000`
+2. Expose to the internet (ngrok, Cloudflare Tunnel, or deploy to a VPS)
+3. In ChatGPT: Settings → Developer Mode → Add MCP Server → enter your server URL
+
+> **Note:** ChatGPT only supports remote MCP servers (no local stdio). Your server must be publicly accessible over HTTPS.
+
+#### Cursor (stdio)
 
 Add to `.cursor/mcp.json` in your project:
 
@@ -92,7 +121,7 @@ Add to `.cursor/mcp.json` in your project:
 }
 ```
 
-#### VS Code Copilot
+#### VS Code Copilot (stdio)
 
 Add to `.vscode/mcp.json`:
 
