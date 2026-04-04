@@ -202,4 +202,4 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-Built by [Jina Connect](https://jinaconnect.com) — the WhatsApp Business CX platform.
+Built by [Jina Connect](https://jinaconnect.jinacode.systems/) — the WhatsApp Business CX platform.
