@@ -1,0 +1,58 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.nakulben/whatsapp-mcp",
+  "title": "WhatsApp MCP Server",
+  "description": "Manage WhatsApp Business templates and send messages via Meta Cloud API",
+  "repository": {
+    "url": "https://github.com/nakulben/whatsapp-mcp",
+    "source": "github"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "jina-whatsapp-mcp",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "META_ACCESS_TOKEN",
+          "description": "Meta API access token with whatsapp_business_messaging and whatsapp_business_management permissions",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "META_WABA_ID",
+          "description": "WhatsApp Business Account ID",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "META_PHONE_NUMBER_ID",
+          "description": "WhatsApp phone number ID",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "META_APP_ID",
+          "description": "Meta app ID (for media uploads)",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "META_API_VERSION",
+          "description": "Meta Graph API version (defaults to v24.0)",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}

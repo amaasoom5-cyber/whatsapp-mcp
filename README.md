@@ -1,5 +1,7 @@
 # WhatsApp MCP Server
 
+<!-- mcp-name: io.github.nakulben/whatsapp-mcp -->
+
 Manage WhatsApp Business templates and send messages from **Claude, ChatGPT, Cursor, VS Code Copilot**, or any MCP-compatible client — powered by the Meta Cloud API.
 
 <p align="center">
