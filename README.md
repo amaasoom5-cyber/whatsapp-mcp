@@ -124,7 +124,7 @@ Once connected, just talk to your AI assistant:
 
 ## Supported Template Types
 
-Meta's API has **2 template categories** (we exclude Authentication). Within each category, templates can have different **structural variants** — each with its own component layout and validation rules.
+Meta's API has **2 template categories**. Within each category, templates can have different **structural variants** — each with its own component layout and validation rules.
 
 ### Marketing Templates
 
