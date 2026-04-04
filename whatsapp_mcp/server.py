@@ -5,6 +5,7 @@ Exposes WhatsApp Business API template management and messaging
 as MCP tools for Claude, Cursor, VS Code Copilot, and other MCP clients.
 """
 
+import contextvars
 import json
 import logging
 import re
@@ -25,13 +26,35 @@ mcp = FastMCP(
     ),
 )
 
-# ── Shared API client ────────────────────────────────────────────────
+# ── Per-request credentials (for streamable-http mode) ───────────────
+
+_request_credentials: contextvars.ContextVar[dict | None] = contextvars.ContextVar(
+    "_request_credentials", default=None
+)
+
+# ── Shared API client (for stdio mode) ───────────────────────────────
 
 _api: MetaAPI | None = None
 
 
 def _get_api() -> MetaAPI:
-    """Get or create the shared MetaAPI client."""
+    """Get or create a MetaAPI client.
+
+    In HTTP mode: reads credentials from per-request headers (via context var).
+    In stdio mode: reads credentials from env vars (cached singleton).
+    """
+    # Check for per-request credentials from HTTP headers
+    creds = _request_credentials.get()
+    if creds:
+        return MetaAPI(
+            access_token=creds["access_token"],
+            waba_id=creds["waba_id"],
+            phone_number_id=creds["phone_number_id"],
+            app_id=creds.get("app_id", ""),
+            api_version=creds.get("api_version", "v24.0"),
+        )
+
+    # Fall back to env vars (stdio mode)
     global _api
     if _api is None:
         config = get_config()

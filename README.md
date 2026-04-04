@@ -38,7 +38,11 @@ pip install -r requirements.txt
 
 ### 2. Configure Credentials
 
-Copy `.env.example` to `.env` and fill in your Meta credentials:
+The server supports **two credential modes** depending on how you run it:
+
+#### Option A: Environment Variables (local / stdio)
+
+For local use with Claude Desktop, Cursor, VS Code, etc.:
 
 ```bash
 cp .env.example .env
@@ -48,9 +52,21 @@ cp .env.example .env
 META_ACCESS_TOKEN=your_access_token
 META_WABA_ID=your_whatsapp_business_account_id
 META_PHONE_NUMBER_ID=your_phone_number_id
-META_APP_ID=your_app_id              # Required for media uploads
+META_APP_ID=your_app_id              # Optional, for media uploads
 META_API_VERSION=v24.0               # Optional, defaults to v24.0
 ```
+
+#### Option B: HTTP Headers (hosted / remote)
+
+For Claude.ai web, ChatGPT, and other remote clients — each user passes their **own** Meta credentials via request headers. No credentials are stored on the server.
+
+| Header | Required | Description |
+|---|---|---|
+| `X-Meta-Access-Token` | Yes | Your Meta access token |
+| `X-Meta-Phone-Number-Id` | Yes | Your WhatsApp phone number ID |
+| `X-Meta-Business-Account-Id` | Yes | Your WhatsApp Business Account ID |
+| `X-Meta-App-Id` | No | Your Meta app ID (for media uploads) |
+| `X-Meta-Api-Version` | No | API version (defaults to v24.0) |
 
 > **How to get these?** Go to [Meta for Developers](https://developers.facebook.com/), create or select your app, navigate to WhatsApp > API Setup.
 
@@ -58,15 +74,15 @@ META_API_VERSION=v24.0               # Optional, defaults to v24.0
 
 The server supports **3 transport modes**:
 
-| Transport | Command | Used By |
-|---|---|---|
-| `stdio` (default) | `python -m whatsapp_mcp` | Claude Desktop, Cursor, VS Code, Windsurf |
-| `sse` | `python -m whatsapp_mcp --transport sse` | ChatGPT, Claude.ai, remote clients |
-| `streamable-http` | `python -m whatsapp_mcp --transport streamable-http` | Newer MCP clients |
+| Transport | Command | Credentials | Used By |
+|---|---|---|---|
+| `stdio` (default) | `python -m whatsapp_mcp` | Env vars | Claude Desktop, Cursor, VS Code, Windsurf |
+| `sse` | `python -m whatsapp_mcp --transport sse` | HTTP headers | ChatGPT, remote clients |
+| `streamable-http` | `python -m whatsapp_mcp --transport streamable-http` | HTTP headers | Claude.ai web, newer MCP clients |
 
 For HTTP transports, you can customize host/port:
 ```bash
-python -m whatsapp_mcp --transport sse --host 0.0.0.0 --port 3000
+python -m whatsapp_mcp --transport streamable-http --host 0.0.0.0 --port 8000
 ```
 
 ---
@@ -92,17 +108,47 @@ Add to `claude_desktop_config.json`:
 }
 ```
 
-#### Claude Desktop / Claude.ai (remote)
+#### Claude.ai Web (remote — streamable-http)
 
-1. Start the server: `python -m whatsapp_mcp --transport sse --host 0.0.0.0 --port 8000`
-2. Expose via [ngrok](https://ngrok.com), Cloudflare Tunnel, or deploy to a VPS
-3. In Claude Desktop: Settings → Connectors → Add Custom MCP → enter your server URL (e.g. `https://your-server.example.com/sse`)
+Claude.ai web connects to remote MCP servers over HTTPS. Users provide their **own** Meta credentials via headers — no credentials are stored on the server.
+
+**If a hosted instance is available** (e.g. `https://your-domain.com/mcp/`):
+
+1. In Claude.ai: Settings → MCP Servers → Add Remote Server
+2. Enter the server URL and your credentials as custom headers:
+   - URL: `https://your-domain.com/mcp/`
+   - `X-Meta-Access-Token`: your Meta access token
+   - `X-Meta-Phone-Number-Id`: your phone number ID
+   - `X-Meta-Business-Account-Id`: your WABA ID
+
+**If self-hosting:**
+
+1. Start the server: `python -m whatsapp_mcp --transport streamable-http --host 0.0.0.0 --port 8001`
+2. Put it behind HTTPS using nginx, Caddy, or a tunnel (ngrok, Cloudflare Tunnel)
+3. Connect from Claude.ai with your credentials as headers (see above)
+
+<details>
+<summary>Example nginx config</summary>
+
+```nginx
+location /mcp/ {
+    proxy_pass http://127.0.0.1:8001/;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_read_timeout 86400;
+}
+```
+</details>
 
 #### ChatGPT (remote)
 
 1. Start the server: `python -m whatsapp_mcp --transport sse --host 0.0.0.0 --port 8000`
 2. Expose to the internet (ngrok, Cloudflare Tunnel, or deploy to a VPS)
 3. In ChatGPT: Settings → Developer Mode → Add MCP Server → enter your server URL
+4. Add your Meta credentials as custom headers (same `X-Meta-*` headers as above)
 
 > **Note:** ChatGPT only supports remote MCP servers (no local stdio). Your server must be publicly accessible over HTTPS.
 
@@ -195,6 +241,7 @@ whatsapp-mcp/
 │   ├── __main__.py          # Entry point (python -m whatsapp_mcp)
 │   ├── config.py            # Environment config loader
 │   ├── meta_api.py          # Async Meta Graph API client
+│   ├── middleware.py         # ASGI middleware for per-request credentials
 │   ├── server.py            # MCP server with 8 tools
 │   ├── models/              # Pydantic data models
 │   │   ├── body.py          # Body component

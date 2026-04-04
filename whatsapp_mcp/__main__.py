@@ -38,6 +38,23 @@ def main():
         mcp.settings.host = args.host
         mcp.settings.port = args.port
 
+        # Wrap with credentials middleware for HTTP transports
+        from whatsapp_mcp.middleware import CredentialsMiddleware
+
+        _original_streamable_http_app = mcp.streamable_http_app
+        _original_sse_app = mcp.sse_app
+
+        def patched_streamable_http_app():
+            app = _original_streamable_http_app()
+            return CredentialsMiddleware(app)
+
+        def patched_sse_app(mount_path=None):
+            app = _original_sse_app(mount_path)
+            return CredentialsMiddleware(app)
+
+        mcp.streamable_http_app = patched_streamable_http_app
+        mcp.sse_app = patched_sse_app
+
     mcp.run(transport=args.transport)
 
 
