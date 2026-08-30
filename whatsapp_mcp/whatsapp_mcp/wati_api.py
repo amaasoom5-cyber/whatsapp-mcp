@@ -50,9 +50,12 @@ class WATIAPI:
                 timeout=DEFAULT_TIMEOUT,
                 headers=self._headers,
             )
+
         return self._client
 
     async def close(self) -> None:
+        """Close the HTTP client."""
+
         if self._client and not self._client.is_closed:
             await self._client.aclose()
 
@@ -62,6 +65,8 @@ class WATIAPI:
         path: str,
         **kwargs: Any,
     ) -> Any:
+        """Make a request to WATI and handle errors."""
+
         client = await self._get_client()
 
         url = f"{self.api_endpoint}{path}"
@@ -74,6 +79,7 @@ class WATIAPI:
 
         try:
             data = response.json()
+
         except Exception:
             data = {
                 "status_code": response.status_code,
@@ -99,9 +105,9 @@ class WATIAPI:
 
         return data
 
-    # ------------------------------------------------------------
+    # ============================================================
     # Templates
-    # ------------------------------------------------------------
+    # ============================================================
 
     async def list_templates(
         self,
@@ -109,6 +115,10 @@ class WATIAPI:
         page_size: int = 20,
         channel: str | None = None,
     ) -> Any:
+        """
+        List WhatsApp templates available in WATI.
+        """
+
         params = {
             "page_number": page_number,
             "page_size": page_size,
@@ -127,6 +137,10 @@ class WATIAPI:
         self,
         template_id: str,
     ) -> Any:
+        """
+        Get one WATI template by template ID.
+        """
+
         return await self._request(
             "GET",
             f"/api/ext/v3/messageTemplates/{template_id}",
@@ -140,6 +154,10 @@ class WATIAPI:
         broadcast_name: str = "MCP",
         channel: str | None = None,
     ) -> Any:
+        """
+        Send an approved WhatsApp template through WATI.
+        """
+
         recipient: dict[str, Any] = {
             "phone_number": phone_number,
         }
@@ -147,12 +165,14 @@ class WATIAPI:
         if parameters:
             recipient["parameters"] = parameters
 
-        payload = {
-            "channel": channel,
+        payload: dict[str, Any] = {
             "template_name": template_name,
             "broadcast_name": broadcast_name,
             "recipients": [recipient],
         }
+
+        if channel:
+            payload["channel"] = channel
 
         return await self._request(
             "POST",
@@ -160,15 +180,21 @@ class WATIAPI:
             json=payload,
         )
 
-    # ------------------------------------------------------------
+    # ============================================================
     # Conversations
-    # ------------------------------------------------------------
+    # ============================================================
 
     async def send_text_message(
         self,
         target: str,
         text: str,
     ) -> Any:
+        """
+        Send a normal WhatsApp text message.
+
+        This is intended for an active WhatsApp conversation.
+        """
+
         payload = {
             "target": target,
             "text": text,
@@ -178,4 +204,26 @@ class WATIAPI:
             "POST",
             "/api/ext/v3/conversations/messages/text",
             json=payload,
+        )
+
+    async def get_messages(
+        self,
+        target: str,
+        page_number: int = 1,
+        page_size: int = 20,
+    ) -> Any:
+        """
+        Get messages from a WATI conversation.
+
+        target may be a phone number, contact/conversation identifier,
+        or another target format supported by WATI.
+        """
+
+        return await self._request(
+            "GET",
+            f"/api/ext/v3/conversations/{target}/messages",
+            params={
+                "page_number": page_number,
+                "page_size": page_size,
+            },
         )
