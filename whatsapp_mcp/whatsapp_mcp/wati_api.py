@@ -33,11 +33,11 @@ class WATIAPI:
         api_endpoint: str,
     ):
         self.api_token = api_token.strip()
-        self.api_endpoint = api_endpoint.rstrip("/")
+        self.api_endpoint = api_endpoint.strip().rstrip("/")
         self._client: httpx.AsyncClient | None = None
 
     @property
-    def _headers(self) -> dict:
+    def _headers(self) -> dict[str, str]:
         return {
             "Authorization": f"Bearer {self.api_token}",
             "Content-Type": "application/json",
@@ -45,6 +45,8 @@ class WATIAPI:
         }
 
     async def _get_client(self) -> httpx.AsyncClient:
+        """Create or reuse the HTTP client."""
+
         if self._client is None or self._client.is_closed:
             self._client = httpx.AsyncClient(
                 timeout=DEFAULT_TIMEOUT,
@@ -54,7 +56,7 @@ class WATIAPI:
         return self._client
 
     async def close(self) -> None:
-        """Close the HTTP client."""
+        """Close the underlying HTTP client."""
 
         if self._client and not self._client.is_closed:
             await self._client.aclose()
@@ -65,21 +67,25 @@ class WATIAPI:
         path: str,
         **kwargs: Any,
     ) -> Any:
-        """Make a request to WATI and handle errors."""
+        """Make a WATI API request and handle errors."""
 
         client = await self._get_client()
 
         url = f"{self.api_endpoint}{path}"
 
-        response = await client.request(
-            method,
-            url,
-            **kwargs,
-        )
+        try:
+            response = await client.request(
+                method,
+                url,
+                **kwargs,
+            )
+        except httpx.RequestError as exc:
+            raise WATIAPIError(
+                f"Could not connect to WATI: {exc}"
+            ) from exc
 
         try:
             data = response.json()
-
         except Exception:
             data = {
                 "status_code": response.status_code,
@@ -90,15 +96,17 @@ class WATIAPI:
             message = "WATI API request failed"
 
             if isinstance(data, dict):
-                message = (
+                error_value = (
                     data.get("message")
                     or data.get("error")
                     or data.get("detail")
-                    or message
                 )
 
+                if error_value:
+                    message = str(error_value)
+
             raise WATIAPIError(
-                str(message),
+                message=message,
                 code=response.status_code,
                 raw=data,
             )
@@ -115,11 +123,9 @@ class WATIAPI:
         page_size: int = 20,
         channel: str | None = None,
     ) -> Any:
-        """
-        List WhatsApp templates available in WATI.
-        """
+        """List WhatsApp templates available in WATI."""
 
-        params = {
+        params: dict[str, Any] = {
             "page_number": page_number,
             "page_size": page_size,
         }
@@ -137,9 +143,7 @@ class WATIAPI:
         self,
         template_id: str,
     ) -> Any:
-        """
-        Get one WATI template by template ID.
-        """
+        """Get one WATI template by template ID."""
 
         return await self._request(
             "GET",
@@ -154,9 +158,7 @@ class WATIAPI:
         broadcast_name: str = "MCP",
         channel: str | None = None,
     ) -> Any:
-        """
-        Send an approved WhatsApp template through WATI.
-        """
+        """Send an approved WhatsApp template through WATI."""
 
         recipient: dict[str, Any] = {
             "phone_number": phone_number,
@@ -192,7 +194,7 @@ class WATIAPI:
         """
         Send a normal WhatsApp text message.
 
-        This is intended for an active WhatsApp conversation.
+        Intended for an active WhatsApp conversation.
         """
 
         payload = {
@@ -212,12 +214,7 @@ class WATIAPI:
         page_number: int = 1,
         page_size: int = 20,
     ) -> Any:
-        """
-        Get messages from a WATI conversation.
-
-        target may be a phone number, contact/conversation identifier,
-        or another target format supported by WATI.
-        """
+        """Get messages from a WATI conversation."""
 
         return await self._request(
             "GET",
