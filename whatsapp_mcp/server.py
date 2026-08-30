@@ -6,9 +6,9 @@ Provides WhatsApp messaging tools through the WATI API.
 
 import json
 import re
-from typing import Any
 
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 
 from whatsapp_mcp.config import get_config, validate_config
 from whatsapp_mcp.wati_api import WATIAPI, WATIAPIError
@@ -19,6 +19,21 @@ mcp = FastMCP(
     instructions=(
         "Manage WhatsApp messages and approved WhatsApp templates "
         "through the WATI API."
+    ),
+    transport_security=TransportSecuritySettings(
+        enable_dns_rebinding_protection=True,
+        allowed_hosts=[
+            "whatsapp-mcp-zxaj.onrender.com",
+            "whatsapp-mcp-zxaj.onrender.com:*",
+            "localhost:*",
+            "127.0.0.1:*",
+        ],
+        allowed_origins=[
+            "https://whatsapp-mcp-zxaj.onrender.com",
+            "https://whatsapp-mcp-zxaj.onrender.com:*",
+            "http://localhost:*",
+            "http://127.0.0.1:*",
+        ],
     ),
 )
 
