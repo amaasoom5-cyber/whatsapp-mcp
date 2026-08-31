@@ -126,16 +126,16 @@ class WATIAPI:
         """List WhatsApp templates available in WATI."""
 
         params: dict[str, Any] = {
-            "page_number": page_number,
-            "page_size": page_size,
+            "pageNumber": page_number,
+            "pageSize": page_size,
         }
 
         if channel:
-            params["channel"] = channel
+            params["channelPhoneNumber"] = channel
 
         return await self._request(
             "GET",
-            "/api/ext/v3/messageTemplates",
+            "/api/v1/getMessageTemplates",
             params=params,
         )
 
