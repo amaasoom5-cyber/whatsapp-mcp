@@ -6,7 +6,6 @@ from typing import Any
 
 import httpx
 
-
 DEFAULT_TIMEOUT = 30.0
 
 
@@ -46,18 +45,15 @@ class WATIAPI:
 
     async def _get_client(self) -> httpx.AsyncClient:
         """Create or reuse the HTTP client."""
-
         if self._client is None or self._client.is_closed:
             self._client = httpx.AsyncClient(
                 timeout=DEFAULT_TIMEOUT,
                 headers=self._headers,
             )
-
         return self._client
 
     async def close(self) -> None:
         """Close the underlying HTTP client."""
-
         if self._client and not self._client.is_closed:
             await self._client.aclose()
 
@@ -68,7 +64,6 @@ class WATIAPI:
         **kwargs: Any,
     ) -> Any:
         """Make a WATI API request and handle errors."""
-
         client = await self._get_client()
         url = f"{self.api_endpoint}{path}"
 
@@ -93,17 +88,14 @@ class WATIAPI:
 
         if response.is_error:
             message = "WATI API request failed"
-
             if isinstance(data, dict):
                 error_value = (
                     data.get("message")
                     or data.get("error")
                     or data.get("detail")
                 )
-
                 if error_value:
                     message = str(error_value)
-
             raise WATIAPIError(
                 message=message,
                 code=response.status_code,
@@ -123,12 +115,10 @@ class WATIAPI:
         channel: str | None = None,
     ) -> Any:
         """List WhatsApp templates available in WATI."""
-
         params: dict[str, Any] = {
             "page_number": page_number,
             "page_size": page_size,
         }
-
         if channel:
             params["channel"] = channel
 
@@ -143,7 +133,6 @@ class WATIAPI:
         template_id: str,
     ) -> Any:
         """Get one WATI template by template ID."""
-
         return await self._request(
             "GET",
             f"/api/ext/v3/messageTemplates/{template_id}",
@@ -158,11 +147,9 @@ class WATIAPI:
         channel: str | None = None,
     ) -> Any:
         """Send an approved WhatsApp template through WATI."""
-
         recipient: dict[str, Any] = {
             "phone_number": phone_number,
         }
-
         if parameters:
             recipient["parameters"] = parameters
 
@@ -171,7 +158,6 @@ class WATIAPI:
             "broadcast_name": broadcast_name,
             "recipients": [recipient],
         }
-
         if channel:
             payload["channel"] = channel
 
@@ -190,13 +176,15 @@ class WATIAPI:
         target: str,
         text: str,
     ) -> Any:
-        """Send a normal WhatsApp text message."""
+        """
+        Send a normal WhatsApp text message.
 
+        Intended for an active WhatsApp conversation.
+        """
         payload = {
             "target": target,
             "text": text,
         }
-
         return await self._request(
             "POST",
             "/api/ext/v3/conversations/messages/text",
@@ -210,7 +198,6 @@ class WATIAPI:
         page_size: int = 20,
     ) -> Any:
         """Get messages from a WATI conversation."""
-
         return await self._request(
             "GET",
             f"/api/ext/v3/conversations/{target}/messages",
@@ -218,4 +205,73 @@ class WATIAPI:
                 "page_number": page_number,
                 "page_size": page_size,
             },
+        )
+
+    # ============================================================
+    # Contacts
+    # ============================================================
+
+    async def get_contacts(
+        self,
+        page_number: int = 1,
+        page_size: int = 100,
+    ) -> Any:
+        """
+        List contacts in the WATI account.
+
+        Paginated, 1-based. WATI caps page_size at 100.
+        """
+        return await self._request(
+            "GET",
+            "/api/ext/v3/contacts",
+            params={
+                "page_number": page_number,
+                "page_size": min(page_size, 100),
+            },
+        )
+
+    async def get_contact(
+        self,
+        target: str,
+    ) -> Any:
+        """
+        Get one contact's full profile.
+
+        target can be a ContactId, a phone number with country code,
+        or a channel-scoped identifier (channel:phone).
+        """
+        return await self._request(
+            "GET",
+            f"/api/ext/v3/contacts/{target}",
+        )
+
+    async def get_contact_count(self) -> Any:
+        """Get the total number of contacts in the WATI account."""
+        return await self._request(
+            "GET",
+            "/api/ext/v3/contacts/count",
+        )
+
+    async def add_contact(
+        self,
+        phone_number: str,
+        name: str | None = None,
+        custom_params: dict[str, Any] | None = None,
+    ) -> Any:
+        """Create or update a contact in WATI."""
+        payload: dict[str, Any] = {
+            "phone_number": phone_number,
+        }
+        if name:
+            payload["name"] = name
+        if custom_params:
+            payload["custom_params"] = [
+                {"name": key, "value": str(value)}
+                for key, value in custom_params.items()
+            ]
+
+        return await self._request(
+            "POST",
+            "/api/ext/v3/contacts",
+            json=payload,
         )
